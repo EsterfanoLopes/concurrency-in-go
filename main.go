@@ -1,7 +1,7 @@
 package main
 
 import (
-	"concurrency-in-go/mutex"
+	"concurrency-in-go/producer_consumer"
 )
 
 func main() {
@@ -9,5 +9,5 @@ func main() {
 
 	// waitgroupcases.Challenge()
 
-	mutex.ComplexMutexRun()
+	producer_consumer.ProducerConsumerRun()
 }
