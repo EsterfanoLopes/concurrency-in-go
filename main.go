@@ -1,11 +1,13 @@
 package main
 
 import (
-	wgc "concurrency-in-go/waitgroupcases"
+	"concurrency-in-go/mutex"
 )
 
 func main() {
-	// wgc.WaitgroupRun()
+	// waitgroupcases.WaitgroupRun()
 
-	wgc.Challenge()
+	// waitgroupcases.Challenge()
+
+	mutex.MutexRun()
 }
