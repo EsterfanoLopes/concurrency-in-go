@@ -1,11 +1,13 @@
 package main
 
 import (
-	wgc "concurrency-in-go/waitgroupcases"
+	"concurrency-in-go/producer_consumer"
 )
 
 func main() {
-	// wgc.WaitgroupRun()
+	// waitgroupcases.WaitgroupRun()
 
-	wgc.Challenge()
+	// waitgroupcases.Challenge()
+
+	producer_consumer.ProducerConsumerRun()
 }
