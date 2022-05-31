@@ -67,6 +67,23 @@ func ProducerConsumerRun() {
 		}
 	}
 	// print out the ending message
+	color.Cyan("------------------")
+	color.Cyan("Done for the day.")
+
+	color.Cyan("We made  %d pizzas, but failed to make %d, with %d attempts in total.", pizzasMade, pizzasFailed, total)
+
+	switch {
+	case pizzasFailed > 9:
+		color.Red("It was a awful day.")
+	case pizzasFailed >= 6:
+		color.Red("It was not a very good day...")
+	case pizzasFailed >= 4:
+		color.Yellow("It was a ok day...")
+	case pizzasFailed >= 2:
+		color.Red("It was a pretty good day...")
+	default:
+		color.Green("It was a great day")
+	}
 }
 
 func pizzeria(pizzaMaker *Producer) {
