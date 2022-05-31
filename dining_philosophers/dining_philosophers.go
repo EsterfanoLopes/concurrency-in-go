@@ -12,6 +12,7 @@ var (
 	sleepTime    = 1 * time.Second
 	eatTime      = 2 * time.Second
 	thinkTime    = 1 * time.Second
+	orderMutex   sync.Mutex
 
 	finishingOrder = []string{}
 )
@@ -85,5 +86,7 @@ func diningProblem(philosopher string, leftFork, rightFork *sync.Mutex) {
 	fmt.Println(philosopher, "is satisfied.")
 	time.Sleep(sleepTime)
 	fmt.Println(philosopher, "has left the table.")
+	orderMutex.Lock()
 	finishingOrder = append(finishingOrder, philosopher)
+	orderMutex.Unlock()
 }
