@@ -1,7 +1,7 @@
 package main
 
 import (
-	"concurrency-in-go/producer_consumer"
+	"concurrency-in-go/dining_philosophers"
 )
 
 func main() {
@@ -9,5 +9,7 @@ func main() {
 
 	// waitgroupcases.Challenge()
 
-	producer_consumer.ProducerConsumerRun()
+	// producer_consumer.ProducerConsumerRun()
+
+	dining_philosophers.Run()
 }
