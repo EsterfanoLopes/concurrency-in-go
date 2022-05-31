@@ -12,10 +12,16 @@ func Run() {
 
 	wg.Add(len(philosophers))
 
+	forkLeft := &sync.Mutex{}
+
 	// spawn go routine for each philosopher
 	for i := 0; i < len(philosophers); i++ {
+		// create a mutex for the right fork
+		forkRight := &sync.Mutex{}
 		//	call a goroutine
-		go diningProblem()
+		go diningProblem(philosophers[i], forkLeft, forkRight)
+
+		forkLeft = forkRight
 	}
 
 	wg.Wait()
@@ -23,6 +29,14 @@ func Run() {
 	return
 }
 
-func diningProblem() {
+func diningProblem(philosopher string, dominantHand, otherHand *sync.Mutex) {
 	defer wg.Done()
+
+	// print a message
+
+	// lock both forks
+
+	// philospher has both forks
+
+	// unlock the mutexes
 }
