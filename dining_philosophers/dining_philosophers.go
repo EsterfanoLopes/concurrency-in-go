@@ -12,6 +12,8 @@ var (
 	sleepTime    = 1 * time.Second
 	eatTime      = 2 * time.Second
 	thinkTime    = 1 * time.Second
+
+	finishingOrder = []string{}
 )
 
 const (
@@ -39,6 +41,11 @@ func Run() {
 	wg.Wait()
 
 	fmt.Println("The table is empty.")
+
+	fmt.Println("The order is:")
+	for idx, ph := range finishingOrder {
+		fmt.Printf("\t%d: %s\n", idx+1, ph)
+	}
 }
 
 func diningProblem(philosopher string, leftFork, rightFork *sync.Mutex) {
@@ -78,4 +85,5 @@ func diningProblem(philosopher string, leftFork, rightFork *sync.Mutex) {
 	fmt.Println(philosopher, "is satisfied.")
 	time.Sleep(sleepTime)
 	fmt.Println(philosopher, "has left the table.")
+	finishingOrder = append(finishingOrder, philosopher)
 }
