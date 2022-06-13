@@ -1,8 +1,6 @@
 package main
 
-import (
-	"concurrency-in-go/simple_channels"
-)
+import "concurrency-in-go/channel_select"
 
 func main() {
 	// waitgroupcases.WaitgroupRun()
@@ -13,5 +11,7 @@ func main() {
 
 	// dining_philosophers.Run()
 
-	simple_channels.Run()
+	// simple_channels.Run()
+
+	channel_select.Run()
 }
