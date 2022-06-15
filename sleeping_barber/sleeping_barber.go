@@ -40,10 +40,13 @@ func Run() {
 	color.Green("The shop is open for the day!")
 
 	// add barbers
+	shop.addBarber("John Doe")
 
 	// start the barbershop as a goroutine
 
 	// add clients
 
 	// block until the barbershop is closed
+
+	time.Sleep(5 * time.Second)
 }
