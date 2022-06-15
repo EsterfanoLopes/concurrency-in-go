@@ -1,7 +1,7 @@
 package main
 
 import (
-	"concurrency-in-go/dining_philosophers"
+	"concurrency-in-go/sleeping_barber"
 )
 
 func main() {
@@ -11,5 +11,13 @@ func main() {
 
 	// producer_consumer.ProducerConsumerRun()
 
-	dining_philosophers.Run()
+	// dining_philosophers.Run()
+
+	// simple_channels.Run()
+
+	// channel_select.Run()
+
+	// buffered_channels.Run()
+
+	sleeping_barber.Run()
 }
