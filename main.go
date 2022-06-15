@@ -1,6 +1,6 @@
 package main
 
-import "concurrency-in-go/channel_select"
+import "concurrency-in-go/buffered_channels"
 
 func main() {
 	// waitgroupcases.WaitgroupRun()
@@ -13,5 +13,7 @@ func main() {
 
 	// simple_channels.Run()
 
-	channel_select.Run()
+	// channel_select.Run()
+
+	buffered_channels.Run()
 }
