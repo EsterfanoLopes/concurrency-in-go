@@ -113,7 +113,7 @@ func makePizza(pizzaNumber int) *PizzaOrder {
 	pizzaNumber++
 	if pizzaNumber <= NumberOfPizzas {
 		delay := rand.Intn(5) + 1
-		fmt.Printf("Received order number %d\n", pizzaNumber)
+		fmt.Printf("\nReceived order number %d\n", pizzaNumber)
 
 		rnd := rand.Intn(12) + 1
 		msg := ""
@@ -126,17 +126,17 @@ func makePizza(pizzaNumber int) *PizzaOrder {
 		}
 		total++
 
-		fmt.Printf("Making Pizza #%d. It will take %d seconds", pizzaNumber, delay)
+		fmt.Printf("\nMaking Pizza #%d. It will take %d seconds", pizzaNumber, delay)
 		// delay for a bit
 		time.Sleep(time.Duration(delay * int(time.Second)))
 
 		if rnd <= 2 {
-			msg = fmt.Sprintf("*** We ran out of ingredients for pizza #%d!", pizzaNumber)
+			msg = fmt.Sprintf("\n*** We ran out of ingredients for pizza #%d!", pizzaNumber)
 		} else if rnd <= 4 {
-			msg = fmt.Sprintf("*** Te cook quit while making pizza #%d!", pizzaNumber)
+			msg = fmt.Sprintf("\n*** Te cook quit while making pizza #%d!", pizzaNumber)
 		} else {
 			success = true
-			msg = fmt.Sprintf("Pizza order #%d is ready!", pizzaNumber)
+			msg = fmt.Sprintf("\nPizza order #%d is ready!", pizzaNumber)
 		}
 
 		p := PizzaOrder{
