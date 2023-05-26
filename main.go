@@ -23,6 +23,7 @@ func main() {
 		ctxWithCancel, cancel = context.WithCancel(context.Background())
 	)
 
+	// new job with settings
 	job := channel_wait_worker_pool.New(
 		numberOfWorkers,
 		numberOfEventsPerCicle,
@@ -31,6 +32,7 @@ func main() {
 
 	job.Run(ctxWithCancel)
 
+	// default time to call cancel to the context
 	time.Sleep(30 * time.Second)
 	cancel()
 }

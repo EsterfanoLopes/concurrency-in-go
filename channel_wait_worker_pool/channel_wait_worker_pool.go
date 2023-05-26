@@ -33,6 +33,7 @@ func (j *Job) Run(ctx context.Context) {
 	shutdown := make(chan bool) // TODO: Use this channel to notify graceful shutdown
 
 	// Notify external context shutdown
+	// TODO: Create listener to close all channels after shutdown is received
 	go func() {
 		for {
 			<-ctx.Done()
@@ -40,6 +41,8 @@ func (j *Job) Run(ctx context.Context) {
 			return
 		}
 	}()
+
+	// TODO: Create infinite loop to control the cycles
 
 	// Create the worker pool
 	for i := 0; i < j.numberOfWorkers; i++ {
