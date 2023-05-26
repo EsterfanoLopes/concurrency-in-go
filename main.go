@@ -1,7 +1,9 @@
 package main
 
 import (
-	"concurrency-in-go/producer_consumer"
+	"concurrency-in-go/channel_wait_worker_pool"
+	"context"
+	"time"
 )
 
 func main() {
@@ -9,7 +11,26 @@ func main() {
 
 	// waitgroupcases.Challenge()
 
-	producer_consumer.ProducerConsumerRun()
+	// producer_consumer.ProducerConsumerRun()
 
 	// dining_philosophers.Run()
+
+	var (
+		numberOfWorkers        = 10
+		numberOfEventsPerCicle = 50
+		waitUntilNextCicle     = 5 * time.Second
+
+		ctxWithCancel, cancel = context.WithCancel(context.Background())
+	)
+
+	job := channel_wait_worker_pool.New(
+		numberOfWorkers,
+		numberOfEventsPerCicle,
+		waitUntilNextCicle,
+	)
+
+	job.Run(ctxWithCancel)
+
+	time.Sleep(30 * time.Second)
+	cancel()
 }
