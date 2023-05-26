@@ -17,17 +17,20 @@ func main() {
 
 	var (
 		numberOfWorkers        = 10
-		numberOfEventsPerCicle = 50
+		numberOfEventsPerCicle = 25
 		waitUntilNextCicle     = 5 * time.Second
 
 		ctxWithCancel, cancel = context.WithCancel(context.Background())
 	)
+
+	shutdownChannel := make(chan bool)
 
 	// new job with settings
 	job := channel_wait_worker_pool.New(
 		numberOfWorkers,
 		numberOfEventsPerCicle,
 		waitUntilNextCicle,
+		shutdownChannel,
 	)
 
 	job.Run(ctxWithCancel)
