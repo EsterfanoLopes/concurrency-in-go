@@ -35,7 +35,7 @@ func main() {
 
 	go func() {
 		// default time to call cancel to the context
-		time.Sleep(30 * time.Second) // change this value to have more or less cycles running.
+		time.Sleep(10 * time.Second) // change this value to have more or less cycles running.
 		cancel()
 	}()
 

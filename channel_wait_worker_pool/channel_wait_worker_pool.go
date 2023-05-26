@@ -29,14 +29,10 @@ type Job struct {
 func (j *Job) gracefulShutdown(ctx context.Context, channelsToClose []any) {
 	go func() { // goroutine to listen shutdown coming from the context
 		deadlineReceived := ctx.Done()
-		for {
-			select {
-			case <-deadlineReceived:
-				fmt.Println("Shutdown received through context")
-				j.stopCycle = true
-				break
-			}
-		}
+
+		<-deadlineReceived
+		fmt.Println("Shutdown received through context")
+		j.stopCycle = true
 	}()
 
 	go func() { // goroutine to listen shutdown coming from the channel
