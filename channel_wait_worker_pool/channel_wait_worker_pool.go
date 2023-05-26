@@ -17,7 +17,12 @@ type Job struct {
 	numberOfWorkers        int
 	numberOfEventsPerCycle int
 	waitBeforeNextCycle    time.Duration
-	shouldClose            bool
+	shutdownChannel        chan any
+}
+
+func (j *Job) gracefulShutdown(chan any) {
+	<-j.shutdownChannel
+	// TODO: Control the close of channels on the shutdown premisse
 }
 
 func New(numberOfWorkers, numberOfEventsPerCycle int, waitBeforeNextCycle time.Duration) Job {
