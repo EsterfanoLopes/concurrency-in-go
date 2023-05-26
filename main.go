@@ -33,6 +33,6 @@ func main() {
 	job.Run(ctxWithCancel)
 
 	// default time to call cancel to the context
-	time.Sleep(30 * time.Second)
+	time.Sleep(1 * time.Second)
 	cancel()
 }

@@ -8,14 +8,16 @@ import (
 )
 
 type Event struct {
-	ID   int
-	Data string
+	ID    int
+	Data  string
+	Cycle int
 }
 
 type Job struct {
 	numberOfWorkers        int
 	numberOfEventsPerCycle int
 	waitBeforeNextCycle    time.Duration
+	shouldClose            bool
 }
 
 func New(numberOfWorkers, numberOfEventsPerCycle int, waitBeforeNextCycle time.Duration) Job {
@@ -30,41 +32,62 @@ func (j *Job) Run(ctx context.Context) {
 	// Create channels for events and control
 	events := make(chan Event)
 	control := make(chan struct{})
-	shutdown := make(chan bool) // TODO: Use this channel to notify graceful shutdown
+	shutdown := make(chan bool)
 
 	// Notify external context shutdown
-	// TODO: Create listener to close all channels after shutdown is received
 	go func() {
 		for {
-			<-ctx.Done()
-			shutdown <- true
-			return
-		}
-	}()
-
-	// TODO: Create infinite loop to control the cycles
-
-	// Create the worker pool
-	for i := 0; i < j.numberOfWorkers; i++ {
-		go worker(i, events, control)
-	}
-
-	// Generate events and send them to the channel
-	go func() {
-		for i := 1; i <= j.numberOfEventsPerCycle; i++ {
-			event := Event{
-				ID:   i,
-				Data: fmt.Sprintf("Event %d", i),
+			a := ctx.Done()
+			if a != nil {
+				fmt.Printf("Context done received\n")
+				shutdown <- true
+				return
 			}
-			events <- event
 		}
-		close(events)
 	}()
 
-	// Wait for all events to be processed
-	for i := 0; i < j.numberOfEventsPerCycle; i++ {
-		<-control
+	go func() {
+		select {
+		case <-shutdown:
+			fmt.Println("Shutdown received. Closing all channels")
+			j.shouldClose = true
+		}
+	}()
+
+	cycle := 0
+	for {
+		fmt.Printf("Starting cycle %d\n", cycle)
+		// Create the worker pool
+		for i := 0; i < j.numberOfWorkers; i++ {
+			go worker(i, events, control)
+		}
+
+		// Generate events and send them to the channel
+		go func() {
+			for i := 1; i <= j.numberOfEventsPerCycle; i++ {
+				event := Event{
+					ID:    i,
+					Data:  fmt.Sprintf("Event %d", i),
+					Cycle: cycle,
+				}
+				events <- event
+			}
+		}()
+
+		// Wait for all events to be processed
+		for i := 0; i < j.numberOfEventsPerCycle; i++ {
+			<-control
+		}
+
+		if j.shouldClose {
+			break
+		}
+
+		fmt.Printf("Finished cycle %d\n", cycle)
+		cycle++
 	}
+
+	close(events)
 
 	fmt.Println("All events processed")
 }
@@ -77,8 +100,8 @@ func worker(id int, events <-chan Event, control chan<- struct{}) {
 }
 
 func processEvent(workerID int, event Event) {
-	fmt.Printf("Worker %d processing event %d: %s\n", workerID, event.ID, event.Data)
+	fmt.Printf("Worker %d processing event %d from cycle %d: %s\n", workerID, event.ID, event.Cycle, event.Data)
 	// Simulate some processing time
 	time.Sleep(time.Duration(rand.Intn(9)) * time.Second)
-	fmt.Printf("Worker %d finished processing event %d\n", workerID, event.ID)
+	fmt.Printf("Worker %d finished processing event %d from cycle %d\n", workerID, event.ID, event.Cycle)
 }
