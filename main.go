@@ -36,6 +36,6 @@ func main() {
 	job.Run(ctxWithCancel)
 
 	// default time to call cancel to the context
-	time.Sleep(1 * time.Second)
+	time.Sleep(60 * time.Second) // change this value to have more or less cycles running.
 	cancel()
 }
