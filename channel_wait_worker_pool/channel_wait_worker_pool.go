@@ -28,9 +28,10 @@ type Job struct {
 // - channel: channel to receive any shutdown signal, from inside or outside the job. E.g.: Sigterm from OS defined on main.go
 func (j *Job) gracefulShutdown(ctx context.Context, channelsToClose []any) {
 	go func() { // goroutine to listen shutdown coming from the context
+		deadlineReceived := ctx.Done()
 		for {
-			deadlineReceived := ctx.Done()
-			if deadlineReceived != nil {
+			select {
+			case <-deadlineReceived:
 				fmt.Println("Shutdown received through context")
 				j.stopCycle = true
 				break

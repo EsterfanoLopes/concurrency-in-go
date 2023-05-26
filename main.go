@@ -17,8 +17,8 @@ func main() {
 
 	var (
 		numberOfWorkers        = 10
-		numberOfEventsPerCicle = 25
-		waitUntilNextCicle     = 5 * time.Second
+		numberOfEventsPerCicle = 15
+		waitUntilNextCicle     = time.Second
 
 		ctxWithCancel, cancel = context.WithCancel(context.Background())
 	)
@@ -33,9 +33,12 @@ func main() {
 		shutdownChannel,
 	)
 
+	go func() {
+		// default time to call cancel to the context
+		time.Sleep(30 * time.Second) // change this value to have more or less cycles running.
+		cancel()
+	}()
+
 	job.Run(ctxWithCancel)
 
-	// default time to call cancel to the context
-	time.Sleep(60 * time.Second) // change this value to have more or less cycles running.
-	cancel()
 }
