@@ -1,21 +1,14 @@
 package channel_wait_worker_pool
 
 import (
+	"concurrency-in-go/channel_wait_worker_pool/event"
 	"context"
 	"fmt"
-	"math/rand"
 	"time"
 )
 
-// Event represents the data to be processed
-type Event struct {
-	ID    int    // event ID
-	Data  string // data to be processed
-	Cycle uint   // cycle number where this event was generated
-}
-
-// Job represents the setup for the job and variables who modifies its behavior
-type Job struct {
+// job represents the setup for the job and variables who modifies its behavior
+type job struct {
 	numberOfWorkers        int           // size of the worker pool
 	numberOfEventsPerCycle int           // number of events to be processed per cycle
 	waitBeforeNextCycle    time.Duration // time to wait before starting the next cycle
@@ -23,50 +16,8 @@ type Job struct {
 	stopCycle              bool          // flag to stop the cycle for loop
 }
 
-// gracefulShutdown controls the shutdown of the job and its related channels from multiple sources
-// - context: external parameter controled by the job caller
-// - channel: channel to receive any shutdown signal, from inside or outside the job. E.g.: Sigterm from OS defined on main.go
-func (j *Job) gracefulShutdown(ctx context.Context, channelsToClose []any) {
-	go func() { // goroutine to listen shutdown coming from the context
-		deadlineReceived := ctx.Done()
-
-		<-deadlineReceived
-		fmt.Println("Shutdown received through context")
-		j.stopCycle = true
-	}()
-
-	go func() { // goroutine to listen shutdown coming from the channel
-		<-j.shutdownChannel
-		fmt.Println("Shutdown received through channel")
-		fmt.Println("gracefully shutting down...")
-
-		j.closeChannels(channelsToClose)
-	}()
-}
-
-func (j *Job) closeChannels(channelsToClose []any) {
-	fmt.Println("Closing Shutdown channel")
-	close(j.shutdownChannel)
-
-	for _, channel := range channelsToClose {
-		switch channel.(type) {
-		case chan Event:
-			fmt.Println("Closing Event channel")
-			c := channel.(chan Event)
-			close(c)
-		case chan struct{}:
-			fmt.Println("Closing Control channel")
-			c := channel.(chan struct{})
-			close(c)
-		default:
-			fmt.Println("Channel type not supported")
-			// FIXME: What to do with unexpected channel type? Panic? external channel to errors?
-		}
-	}
-}
-
-func New(numberOfWorkers, numberOfEventsPerCycle int, waitBeforeNextCycle time.Duration, shutdownChannel chan bool) Job {
-	return Job{
+func New(numberOfWorkers, numberOfEventsPerCycle int, waitBeforeNextCycle time.Duration, shutdownChannel chan bool) job {
+	return job{
 		numberOfWorkers:        numberOfWorkers,
 		numberOfEventsPerCycle: numberOfEventsPerCycle,
 		waitBeforeNextCycle:    waitBeforeNextCycle,
@@ -74,10 +25,10 @@ func New(numberOfWorkers, numberOfEventsPerCycle int, waitBeforeNextCycle time.D
 	}
 }
 
-func (j *Job) Run(ctx context.Context) {
+func (j *job) Run(ctx context.Context) {
 	// Create channels for events and control
-	events := make(chan Event)     // event channel controls the received events to be processed
-	control := make(chan struct{}) // control channel controls if the workers are ready to receive a new event to process or not
+	events := make(chan event.Event) // event channel controls the received events to be processed
+	control := make(chan struct{})   // control channel controls if the workers are ready to receive a new event to process or not
 
 	go j.gracefulShutdown(ctx, []any{events, control})
 
@@ -93,11 +44,7 @@ func (j *Job) Run(ctx context.Context) {
 		// Generate events and send them to the channel
 		go func() {
 			for i := 1; i <= j.numberOfEventsPerCycle; i++ {
-				event := Event{
-					ID:    i,
-					Data:  fmt.Sprintf("Event %d", i),
-					Cycle: cycle,
-				}
+				event := event.New(i, fmt.Sprintf("Event %d", i), cycle)
 				events <- event
 			}
 		}()
@@ -124,17 +71,51 @@ func (j *Job) Run(ctx context.Context) {
 }
 
 // worker controls the distribution of events to be processed by a available worker
-func worker(id int, events <-chan Event, control chan<- struct{}) {
+func worker(id int, events <-chan event.Event, control chan<- struct{}) {
 	for event := range events {
-		processEvent(id, event)
+		event.ProcessEvent(id)
 		control <- struct{}{} // this channel controls if the workers are ready to receive a new event to process or not
 	}
 }
 
-// processEvent simulates the processing of an event. This would contain the real processing for the job
-func processEvent(workerID int, event Event) {
-	fmt.Printf("Worker %d processing event %d from cycle %d: %s\n", workerID, event.ID, event.Cycle, event.Data)
-	// Simulate some random processing time
-	time.Sleep(time.Duration(rand.Intn(9)) * time.Second)
-	fmt.Printf("Worker %d finished processing event %d from cycle %d\n", workerID, event.ID, event.Cycle)
+// gracefulShutdown controls the shutdown of the job and its related channels from multiple sources
+// - context: external parameter controled by the job caller
+// - channel: channel to receive any shutdown signal, from inside or outside the job. E.g.: Sigterm from OS defined on main.go
+func (j *job) gracefulShutdown(ctx context.Context, channelsToClose []any) {
+	go func() { // goroutine to listen shutdown coming from the context
+		deadlineReceived := ctx.Done()
+
+		<-deadlineReceived
+		fmt.Println("Shutdown received through context")
+		j.stopCycle = true
+	}()
+
+	go func() { // goroutine to listen shutdown coming from the channel
+		<-j.shutdownChannel
+		fmt.Println("Shutdown received through channel")
+		fmt.Println("gracefully shutting down...")
+
+		j.closeChannels(channelsToClose)
+	}()
+}
+
+func (j *job) closeChannels(channelsToClose []any) {
+	fmt.Println("Closing Shutdown channel")
+	close(j.shutdownChannel)
+
+	for _, channel := range channelsToClose {
+		switch channel.(type) {
+		case chan event.Event:
+			fmt.Println("Closing Event channel")
+			c := channel.(chan event.Event)
+			close(c)
+		case chan struct{}:
+			fmt.Println("Closing Control channel")
+			c := channel.(chan struct{})
+			close(c)
+		default:
+			fmt.Println("Channel type not supported")
+			// FIXME: What to do with unexpected channel type? Panic? external channel to errors?
+		}
+	}
 }

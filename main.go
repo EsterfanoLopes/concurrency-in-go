@@ -40,5 +40,4 @@ func main() {
 	}()
 
 	job.Run(ctxWithCancel)
-
 }
