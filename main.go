@@ -17,7 +17,7 @@ func main() {
 
 	var (
 		numberOfWorkers        = 10
-		numberOfEventsPerCicle = 15
+		numberOfEventsPerCicle = uint(15)
 		waitUntilNextCicle     = time.Second
 
 		ctxWithCancel, cancel = context.WithCancel(context.Background())

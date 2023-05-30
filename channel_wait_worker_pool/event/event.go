@@ -8,13 +8,13 @@ import (
 
 // Event represents the data to be processed
 type Event struct {
-	ID    int    // event ID
+	ID    uint   // event ID
 	Data  string // data to be processed
 	Cycle uint   // cycle number where this event was generated
 }
 
 // New creates a new Event
-func New(ID int, Data string, Cycle uint) Event {
+func New(ID uint, Data string, Cycle uint) Event {
 	return Event{
 		ID:    ID,
 		Data:  Data,

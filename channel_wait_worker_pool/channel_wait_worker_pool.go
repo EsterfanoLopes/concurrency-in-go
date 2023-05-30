@@ -2,6 +2,7 @@ package channel_wait_worker_pool
 
 import (
 	"concurrency-in-go/channel_wait_worker_pool/event"
+	"concurrency-in-go/channel_wait_worker_pool/mutex_map"
 	"context"
 	"fmt"
 	"time"
@@ -9,26 +10,30 @@ import (
 
 // job represents the setup for the job and variables who modifies its behavior
 type job struct {
-	numberOfWorkers        int           // size of the worker pool
-	numberOfEventsPerCycle int           // number of events to be processed per cycle
-	waitBeforeNextCycle    time.Duration // time to wait before starting the next cycle
-	shutdownChannel        chan bool     // channel to notify shutdown to all goroutines
-	stopCycle              bool          // flag to stop the cycle for loop
+	numberOfWorkers        int                 // size of the worker pool
+	numberOfEventsPerCycle uint                // number of events to be processed per cycle
+	waitBeforeNextCycle    time.Duration       // time to wait before starting the next cycle
+	controlIDMutexMap      *mutex_map.MutexMap // map to store the IDs being operated and the mutex for each worker
+	shutdownChannel        chan bool           // channel to notify shutdown to all goroutines
+	stopCycle              bool                // flag to stop the cycle for loop
 }
 
-func New(numberOfWorkers, numberOfEventsPerCycle int, waitBeforeNextCycle time.Duration, shutdownChannel chan bool) job {
+func New(numberOfWorkers int, numberOfEventsPerCycle uint, waitBeforeNextCycle time.Duration, shutdownChannel chan bool) job {
+	controlIDMutexMap := mutex_map.New()
+
 	return job{
 		numberOfWorkers:        numberOfWorkers,
 		numberOfEventsPerCycle: numberOfEventsPerCycle,
 		waitBeforeNextCycle:    waitBeforeNextCycle,
 		shutdownChannel:        shutdownChannel,
+		controlIDMutexMap:      controlIDMutexMap,
 	}
 }
 
 func (j *job) Run(ctx context.Context) {
 	// Create channels for events and control
 	events := make(chan event.Event) // event channel controls the received events to be processed
-	control := make(chan struct{})   // control channel controls if the workers are ready to receive a new event to process or not
+	control := make(chan uint)       // control channel controls if the workers are ready to receive a new event to process or not
 
 	go j.gracefulShutdown(ctx, []any{events, control})
 
@@ -43,15 +48,28 @@ func (j *job) Run(ctx context.Context) {
 
 		// Generate events and send them to the channel
 		go func() {
-			for i := 1; i <= j.numberOfEventsPerCycle; i++ {
+			for i := uint(1); i <= j.numberOfEventsPerCycle; i++ {
 				event := event.New(i, fmt.Sprintf("Event %d", i), cycle)
+
+				_, ok := j.controlIDMutexMap.Get(event.ID)
+				if ok {
+					fmt.Printf("Event %d with message %s already exists in the map. Retry it next cycle\n", event.ID, event.Data)
+					i-- // to have another event on the same cycle
+					continue
+				}
+
+				// Set id to the control mutex
+				j.controlIDMutexMap.Set(event.ID, struct{}{})
+
+				// Send event to the channel to be processed
 				events <- event
 			}
 		}()
 
 		// Wait for all events to be processed
-		for i := 0; i < j.numberOfEventsPerCycle; i++ {
-			<-control
+		for i := uint(0); i < j.numberOfEventsPerCycle; i++ {
+			idToRelease := <-control
+			j.controlIDMutexMap.Delete(idToRelease) // release the mutex for the worker to receive a new event
 		}
 
 		if j.stopCycle {
@@ -71,10 +89,10 @@ func (j *job) Run(ctx context.Context) {
 }
 
 // worker controls the distribution of events to be processed by a available worker
-func worker(id int, events <-chan event.Event, control chan<- struct{}) {
+func worker(id int, events <-chan event.Event, control chan<- uint) {
 	for event := range events {
 		event.ProcessEvent(id)
-		control <- struct{}{} // this channel controls if the workers are ready to receive a new event to process or not
+		control <- event.ID // this channel controls if the workers are ready to receive a new event to process or not
 	}
 }
 
@@ -109,9 +127,9 @@ func (j *job) closeChannels(channelsToClose []any) {
 			fmt.Println("Closing Event channel")
 			c := channel.(chan event.Event)
 			close(c)
-		case chan struct{}:
+		case chan uint:
 			fmt.Println("Closing Control channel")
-			c := channel.(chan struct{})
+			c := channel.(chan uint)
 			close(c)
 		default:
 			fmt.Println("Channel type not supported")
