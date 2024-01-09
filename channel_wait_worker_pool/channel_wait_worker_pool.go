@@ -2,24 +2,24 @@ package channel_wait_worker_pool
 
 import (
 	"concurrency-in-go/channel_wait_worker_pool/event"
-	"concurrency-in-go/channel_wait_worker_pool/mutex_map"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 )
 
 // job represents the setup for the job and variables who modifies its behavior
 type job struct {
-	numberOfWorkers        int                 // size of the worker pool
-	numberOfEventsPerCycle uint                // number of events to be processed per cycle
-	waitBeforeNextCycle    time.Duration       // time to wait before starting the next cycle
-	controlIDMutexMap      *mutex_map.MutexMap // map to store the IDs being operated and the mutex for each worker
-	shutdownChannel        chan bool           // channel to notify shutdown to all goroutines
-	stopCycle              bool                // flag to stop the cycle for loop
+	numberOfWorkers        int           // size of the worker pool
+	numberOfEventsPerCycle uint          // number of events to be processed per cycle
+	waitBeforeNextCycle    time.Duration // time to wait before starting the next cycle
+	controlIDMutexMap      *sync.Map     // map to store the IDs being operated and the mutex for each worker
+	shutdownChannel        chan bool     // channel to notify shutdown to all goroutines
+	stopCycle              bool          // flag to stop the cycle for loop
 }
 
 func New(numberOfWorkers int, numberOfEventsPerCycle uint, waitBeforeNextCycle time.Duration, shutdownChannel chan bool) job {
-	controlIDMutexMap := mutex_map.New()
+	controlIDMutexMap := &sync.Map{}
 
 	return job{
 		numberOfWorkers:        numberOfWorkers,
@@ -51,7 +51,7 @@ func (j *job) Run(ctx context.Context) {
 			for i := uint(1); i <= j.numberOfEventsPerCycle; i++ {
 				event := event.New(i, fmt.Sprintf("Event %d", i), cycle)
 
-				_, ok := j.controlIDMutexMap.Get(event.ID)
+				_, ok := j.controlIDMutexMap.Load(event.ID)
 				if ok {
 					fmt.Printf("Event %d with message %s already exists in the map. Retry it next cycle\n", event.ID, event.Data)
 					i-- // to have another event on the same cycle
@@ -59,7 +59,7 @@ func (j *job) Run(ctx context.Context) {
 				}
 
 				// Set id to the control mutex
-				j.controlIDMutexMap.Set(event.ID, struct{}{})
+				j.controlIDMutexMap.Store(event.ID, struct{}{})
 
 				// Send event to the channel to be processed
 				events <- event
