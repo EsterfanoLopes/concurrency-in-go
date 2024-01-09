@@ -122,15 +122,13 @@ func (j *job) closeChannels(channelsToClose []any) {
 	close(j.shutdownChannel)
 
 	for _, channel := range channelsToClose {
-		switch channel.(type) {
+		switch channel := channel.(type) {
 		case chan event.Event:
 			fmt.Println("Closing Event channel")
-			c := channel.(chan event.Event)
-			close(c)
+			close(channel)
 		case chan uint:
 			fmt.Println("Closing Control channel")
-			c := channel.(chan uint)
-			close(c)
+			close(channel)
 		default:
 			fmt.Println("Channel type not supported")
 			// FIXME: What to do with unexpected channel type? Panic? external channel to errors?
